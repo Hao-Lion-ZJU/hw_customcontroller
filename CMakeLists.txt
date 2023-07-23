@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.1.0)
 project(test)
-# set(CMAKE_BUILD_TYPE "release")
+set(CMAKE_BUILD_TYPE "release")
 
 # 设置编译模式
-set( CMAKE_BUILD_TYPE "Debug" )
-SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")  
+# set( CMAKE_BUILD_TYPE "Debug" )
+# SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")  
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall") 
 
 find_package(realsense2 REQUIRED)
