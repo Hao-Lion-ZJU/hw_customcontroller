@@ -1,0 +1,7 @@
+
+# 忽略/build目录，相对.gitignore文件所在目录
+/build
+/serial/build
+ 
+# 忽略IDE的配置文件
+.vscode/
