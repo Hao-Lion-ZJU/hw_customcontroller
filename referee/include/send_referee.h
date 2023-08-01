@@ -10,7 +10,7 @@ extern "C"
 #endif
 
 extern void init_send_struct_data(void);
-extern uint16_t referee_send_pose(uint8_t* buff, float pos_x, float pos_y, float pos_z, float w, float x, float y, float z);
+extern uint16_t referee_send_pose(uint8_t* buff, float pos_x, float pos_y, float pos_z, float roll, float pitch, float yaw);
 
 #ifdef __cplusplus
 }

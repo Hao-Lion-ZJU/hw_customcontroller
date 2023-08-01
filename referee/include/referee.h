@@ -16,14 +16,13 @@ extern "C"
 //自定义控制器数据交互
 typedef struct //0x0302
 {
+    float roll;
+    float pitch;
+    float yaw;
     float position_x;
     float position_y;
     float position_z;
-    float w;
-    float x;
-    float y;
-    float z;
-    int16_t empty;
+    uint8_t empty[6];
 } ext_custom_controller_data_t;
 
 #pragma pack(pop)

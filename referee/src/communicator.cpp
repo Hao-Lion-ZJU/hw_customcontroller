@@ -40,7 +40,7 @@ Communicator::~Communicator()
 void Communicator::connect()
 {
     CHECK_ENABLE()
-    const string port_names[] = {"/dev/ttyUSB0"};
+    const string port_names[] = {"/dev/ttyUSB0","/dev/ttyAMA1"};
     int sz = sizeof(port_names) / sizeof(port_names[0]);
     int idx = 0;
     while ( true ) {
@@ -74,7 +74,7 @@ void Communicator::send(SerialPkg pkg)
     CHECK_CONNECT()
     uint8_t frame[128] = {0};   //最大一帧数据量
 
-    uint8_t frame_len =  referee_send_pose(frame, pkg.pos_x, pkg.pos_y, pkg.pos_z, pkg.w, pkg.x, pkg.y, pkg.z);
+    uint8_t frame_len =  referee_send_pose(frame, pkg.pos_x, pkg.pos_y, pkg.pos_z, pkg.roll, pkg.pitch, pkg.yaw);
 
     try {
         write(frame, frame_len);

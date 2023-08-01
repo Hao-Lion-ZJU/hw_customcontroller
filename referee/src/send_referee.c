@@ -102,7 +102,7 @@ void init_send_struct_data(void)
   * @param[in] yaw     yaw角度
   * @retval    发送数据长度
   */
-uint16_t referee_send_pose(uint8_t* buff, float pos_x, float pos_y, float pos_z, float w, float x, float y, float z)
+uint16_t referee_send_pose(uint8_t* buff, float pos_x, float pos_y, float pos_z, float roll, float pitch, float yaw)
 {
 	
 	uint8_t data_buff[DATA_MAX_SIZE];
@@ -110,11 +110,10 @@ uint16_t referee_send_pose(uint8_t* buff, float pos_x, float pos_y, float pos_z,
 	custom_controller_send_data.position_x = pos_x;
 	custom_controller_send_data.position_y = pos_y;
 	custom_controller_send_data.position_z = pos_z;
-	custom_controller_send_data.w = w;
-	custom_controller_send_data.x = x;
-	custom_controller_send_data.y = y;
-  custom_controller_send_data.z = z;
-  custom_controller_send_data.empty = 0xaa;
+	custom_controller_send_data.roll = roll;
+	custom_controller_send_data.pitch = pitch;
+	custom_controller_send_data.yaw = yaw;
+  memset(custom_controller_send_data.empty, 0xaa, sizeof(custom_controller_send_data.empty));
 
 	/*****数据段填充*****/
 	memcpy(&data_buff[0],(uint8_t*)&custom_controller_send_data,sizeof(ext_custom_controller_data_t));

@@ -9,10 +9,9 @@
 
 struct SerialPkg
 {
-    float w;
-    float x; 
-	float y; 
-	float z;
+    float roll;
+    float pitch; 
+	float yaw; 
 
     float pos_x;
 	float pos_y; 

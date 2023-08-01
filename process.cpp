@@ -46,88 +46,100 @@ CustomController::~CustomController()
 /**
  * @brief 从数据流读取位姿
  */
-int CustomController::Poser()try
+int CustomController::Poser()
 {
-    //声明一个realsense传感器设备
-    rs2::pipeline pipe;
-    // 创建一个配置信息
-    rs2::config cfg;
-    //告诉配置信息，我需要传感器的POSE和6DOF IMU数据
-    cfg.enable_stream(RS2_STREAM_POSE, RS2_FORMAT_6DOF);
-
-    SerialPkg pkg = 
+    while (true)
     {
-        .pos_x = 0.0,
-        .pos_y = 0.0,
-        .pos_z = 0.0,
-    };
-
-    
-    std::mutex mutex;
-    //回调函数
-    auto callback = [&](const rs2::frame& frame)
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        if (rs2::pose_frame fp = frame.as<rs2::pose_frame>()) {
-            rs2_pose pose_data = fp.get_pose_data();
-            auto now = std::chrono::system_clock::now().time_since_epoch();
-            double now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
-            double pose_time_ms = fp.get_timestamp();
-            float dt_s = static_cast<float>(std::max(0., (now_ms - pose_time_ms)/1000.));
-            rs2_pose predicted_pose = predict_pose(pose_data, dt_s);
-            Eigen::Quaterniond quaternion(predicted_pose.rotation.w,predicted_pose.rotation.x,predicted_pose.rotation.y,predicted_pose.rotation.z);
-            Eigen::Vector3d eulerAngle=quaternion.matrix().eulerAngles(0,1,2);
-            std::cout << "Predicted " << std::fixed << std::setprecision(3) << dt_s*1000 << "ms " <<
-                    "Confidence: " << pose_data.tracker_confidence << " T: " <<
-                    predicted_pose.translation.x << " " <<
-                    predicted_pose.translation.y << " " <<
-                    predicted_pose.translation.z << " (meters)   \t" <<
-                    "yaw: " << eulerAngle(2) * 180/3.14  <<
-                    "pitch: " << eulerAngle(1) * 180/3.14 <<
-                    "roll: " << eulerAngle(0) * 180/3.14 << std::endl;
-            pkg.pos_x = predicted_pose.translation.x; pkg.pos_y = predicted_pose.translation.y; pkg.pos_z = predicted_pose.translation.z;
-            pkg.w = predicted_pose.rotation.w; pkg.x = predicted_pose.rotation.x; pkg.y = predicted_pose.rotation.y; pkg.z = predicted_pose.rotation.z;
-        }
-    };
-
-    
-
-    while(true) {
-        if(gpio_status && !rs_status)
+        try
         {
-            gpio_mtx.lock();
-            //开始接收数据，接收数据之后进入回调函数进行处理
-            rs2::pipeline_profile profiles = pipe.start(cfg, callback);
-            rs_status = true;
-            std::cout << "started out\n";
-             gpio_mtx.unlock();
+            //声明一个realsense传感器设备
+            rs2::pipeline pipe;
+            // 创建一个配置信息
+            rs2::config cfg;
+            //告诉配置信息，我需要传感器的POSE和6DOF IMU数据
+            cfg.enable_stream(RS2_STREAM_POSE, RS2_FORMAT_6DOF);
 
+            SerialPkg pkg = 
+            {
+                .pos_x = 0.0,
+                .pos_y = 0.0,
+                .pos_z = 0.0,
+            };
+
+            
+            std::mutex mutex;
+            //回调函数
+            auto callback = [&](const rs2::frame& frame)
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if (rs2::pose_frame fp = frame.as<rs2::pose_frame>()) {
+                    rs2_pose pose_data = fp.get_pose_data();
+                    auto now = std::chrono::system_clock::now().time_since_epoch();
+                    double now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+                    double pose_time_ms = fp.get_timestamp();
+                    float dt_s = static_cast<float>(std::max(0., (now_ms - pose_time_ms)/1000.));
+                    rs2_pose predicted_pose = predict_pose(pose_data, dt_s);
+                    Eigen::Quaterniond quaternion(predicted_pose.rotation.w,predicted_pose.rotation.x,predicted_pose.rotation.y,predicted_pose.rotation.z);
+                    Eigen::Vector3d eulerAngle=quaternion.matrix().eulerAngles(0,1,2);
+                    std::cout << 
+                            "x: " << predicted_pose.translation.x << " " <<
+                            "y: " << predicted_pose.translation.y << " " <<
+                            "z: " << predicted_pose.translation.z << " (meters)   \t" <<
+                            "yaw: " << eulerAngle(2) * 180/3.14  <<
+                            "pitch: " << eulerAngle(1) * 180/3.14 <<
+                            "roll: " << eulerAngle(0) * 180/3.14 << std::endl;
+                    pkg.pos_x = predicted_pose.translation.x; pkg.pos_y = predicted_pose.translation.y; pkg.pos_z = predicted_pose.translation.z;
+                    pkg.roll = eulerAngle(0); pkg.pitch = eulerAngle(1); pkg.yaw = eulerAngle(2);
+                }
+            };
+
+            
+
+            while(true) {
+                if(gpio_status && !rs_status)
+                {
+                    gpio_mtx.lock();
+                    //开始接收数据，接收数据之后进入回调函数进行处理
+                    rs2::pipeline_profile profiles = pipe.start(cfg, callback);
+                    rs_status = true;
+                    std::cout << "started out\n";
+                    gpio_mtx.unlock();
+
+                }
+                else if(!gpio_status && rs_status)
+                {
+                    gpio_mtx.lock();
+                    //停止数据接收
+                    pipe.stop();
+                    rs_status = false;
+                    std::cout << "stopped out\n";
+                    gpio_mtx.unlock();
+                }
+                Communicator_Ptr->send(pkg);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+
+            return EXIT_SUCCESS;
         }
-        else if(!gpio_status && rs_status)
+        catch (const rs2::error & e)
         {
-            gpio_mtx.lock();
-            //停止数据接收
-            pipe.stop();
+            std::cerr << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
             rs_status = false;
-            std::cout << "stopped out\n";
-             gpio_mtx.unlock();
+            continue;
         }
-        Communicator_Ptr->send(pkg);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        catch (const std::exception& e)
+        {
+            std::cerr << e.what() << std::endl;
+            rs_status = false;
+            continue;
+        }
+        std::cout << "T265 connecting...!" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
+    
+    
+}
 
-    return EXIT_SUCCESS;
-}
-catch (const rs2::error & e)
-{
-    std::cerr << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
-    return EXIT_FAILURE;
-}
-catch (const std::exception& e)
-{
-    std::cerr << e.what() << std::endl;
-    return EXIT_FAILURE;
-}
 
 void CustomController::Gpiomon()
 {
