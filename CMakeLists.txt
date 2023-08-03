@@ -27,8 +27,8 @@ file(GLOB GPIO gpio/src/*.*)
 include_directories(gpio/include)
 
 
-add_executable(test main.cpp process.cpp ${REFEREE} ${ALOGRITHM} ${GPIO})
-target_link_libraries(test ${realsense2_LIBRARY} )
+add_executable(test main.cpp process.cpp ${REFEREE} ${ALOGRITHM} ${GPIO} )
+target_link_libraries(test ${realsense2_LIBRARY} -lpthread -lm)
 
 target_link_libraries(test ${PROJECT_SOURCE_DIR}/serial/lib/arm64/libserial.a)
 #gpiod

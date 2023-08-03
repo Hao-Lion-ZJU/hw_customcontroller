@@ -40,7 +40,7 @@ Communicator::~Communicator()
 void Communicator::connect()
 {
     CHECK_ENABLE()
-    const string port_names[] = {"/dev/ttyUSB0","/dev/ttyAMA1"};
+    const string port_names[] = {"/dev/ttyUSB0","/dev/ttyUSB1","/dev/ttyAMA1"};
     int sz = sizeof(port_names) / sizeof(port_names[0]);
     int idx = 0;
     while ( true ) {
